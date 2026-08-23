@@ -13,7 +13,13 @@ import { LaunchProgress } from "./launch-progress"
 export function WipLanding() {
   return (
     <section className="relative flex min-h-dvh snap-start flex-col items-center justify-center px-4 py-[clamp(1rem,3vh,3rem)] text-center sm:px-6">
-      <h1 className="animate-fade-up font-display text-[clamp(2.25rem,8vmin,4.5rem)] font-semibold leading-[1.05] tracking-tight">
+      {/*
+        The floor and the fluid term follow the text-size control; the 4.5rem
+        ceiling deliberately does not. This clamp exists so the headline fits
+        inside one min-h-dvh section, and scaling the ceiling wraps it to three
+        lines on a short laptop window, pushing the countdown out of view.
+      */}
+      <h1 className="animate-fade-up font-display text-[clamp(calc(2.25rem*var(--font-scale,1)),calc(8vmin*var(--font-scale,1)),4.5rem)] font-semibold leading-[1.05] tracking-tight">
         <span className="sr-only">{SITE.name} - </span>
         <span className="block text-foreground">Engineering</span>
         <span className="block bg-gradient-to-r from-brand via-brand to-brand-2 bg-clip-text text-transparent">

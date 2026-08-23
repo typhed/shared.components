@@ -35,6 +35,7 @@ component runs as a React Server Component or ships a client bundle (`"use clien
 | SiteHeader | [site-header.tsx](../../packages/ui/components/site-header.tsx) | Server | [site-header.md](site-header.md) |
 | SiteFooter | [site-footer.tsx](../../packages/ui/components/site-footer.tsx) | Server | [site-footer.md](site-footer.md) |
 | ScrollToTop | [scroll-to-top.tsx](../../packages/ui/components/scroll-to-top.tsx) | Client | [scroll-to-top.md](scroll-to-top.md) |
+| FontSizeToggle | [font-size-toggle.tsx](../../packages/ui/components/font-size-toggle.tsx) | Client | [font-size-toggle.md](font-size-toggle.md) |
 | ThemeToggle | [theme-toggle.tsx](../../packages/ui/components/theme-toggle.tsx) | Client | [theme-toggle.md](theme-toggle.md) |
 | ThemeProvider | [theme-provider.tsx](../../packages/ui/components/theme-provider.tsx) | Client | [theme-provider.md](theme-provider.md) |
 | Button | [ui/button.tsx](../../packages/ui/components/ui/button.tsx) | Server | [button.md](button.md) |
@@ -63,6 +64,9 @@ in dark, indigo leads in light. When a component page lists "Colors And Tokens",
     [@typhed/brand](https://github.com/typhed/shared.documents/blob/master/brand/index.ts). Components read from there rather than hardcoding text.
   * **Fonts**: `font-display` is Space Grotesk and `font-sans` is Inter, both wired in
     `app/layout.tsx`.
+  * **Text size**: every `text-*` utility resolves through the `--font-scale` custom property, which
+    [FontSizeToggle](font-size-toggle.md) sets. Spacing never references it, so larger type is not page zoom. An
+    arbitrary `text-[...]` value opts out by default and needs an explicit `calc` to follow the control.
 
 ## 🤖 Notes For LLM Agents
 

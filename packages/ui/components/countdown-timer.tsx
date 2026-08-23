@@ -101,7 +101,7 @@ export function CountdownTimer({ className }: { className?: string }) {
                   </motion.span>
                 </AnimatePresence>
               </div>
-              <span className="mt-3 text-[0.625rem] uppercase tracking-[0.2em] text-muted-foreground sm:text-xs">
+              <span className="mt-3 text-[calc(0.625rem*var(--font-scale,1))] uppercase tracking-[0.2em] text-muted-foreground sm:text-xs">
                 {unit.label}
               </span>
             </div>

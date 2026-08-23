@@ -4,6 +4,37 @@ const spacingTokens = require("@typhed/brand/tokens/spacing.json")
 const typographyTokens = require("@typhed/brand/tokens/typography.json")
 
 /**
+ * The multiplier every font size in this preset is expressed against. The
+ * header's `FontSizeToggle` writes it onto `<html>`; the `, 1` fallback means
+ * a page that never sets it renders at the stock Tailwind size.
+ */
+const SCALE = "var(--font-scale, 1)"
+
+/**
+ * One entry of the type scale, expressed as a multiple of `--font-scale`.
+ *
+ * Only the font size and a `rem` line height are multiplied. Unitless line
+ * heights (`5xl` and up) are already relative to the font size and so scale on
+ * their own, as does every `em` value such as `tracking-tight`. Nothing in the
+ * spacing scale references the property, which is the entire point: text grows
+ * and the layout around it holds still.
+ *
+ * @param {string} size a `rem` font size from the stock Tailwind scale
+ * @param {string} lineHeight a `rem` line height, or a unitless ratio
+ * @returns {[string, { lineHeight: string }]} a Tailwind fontSize entry
+ */
+function scaled(size, lineHeight) {
+  return [
+    `calc(${size} * ${SCALE})`,
+    {
+      lineHeight: lineHeight.endsWith("rem")
+        ? `calc(${lineHeight} * ${SCALE})`
+        : lineHeight,
+    },
+  ]
+}
+
+/**
  * Shared Tailwind preset for every TyPhed app and package.
  *
  * Apps extend it with `presets: [sharedConfig]` and supply their own `content`
@@ -17,6 +48,20 @@ const typographyTokens = require("@typhed/brand/tokens/typography.json")
  * bundler tracks CSS files and rebuilds when they change but does not track
  * JSON required by this config. An app that skips that step gets no colours at
  * all, which is the loud failure the arrangement is designed for.
+ *
+ * `--font-scale` is the one thing this preset does emit from a plugin, and the
+ * reasoning above does not apply to it: the default and the base size are
+ * static literals written in this file, not values read from JSON, and Tailwind
+ * watches its own config. It exists so the header's text-size control can grow
+ * type without growing anything else. Every `text-*` utility multiplies by it;
+ * no spacing, height, radius, or gap utility ever does.
+ *
+ * The one sharp edge: an arbitrary size such as `text-[0.625rem]` bypasses the
+ * scale entirely. That is the right default, because opting out stays trivial,
+ * but an arbitrary size that SHOULD follow the control has to say so, as
+ * `countdown-timer.tsx` and `wip-landing.tsx` both do:
+ *
+ *     text-[calc(0.625rem*var(--font-scale,1))]
  *
  * @type {import("tailwindcss").Config}
  */
@@ -70,6 +115,24 @@ module.exports = {
       },
       borderRadius: spacingTokens.radius.scale,
       fontFamily: typographyTokens.fontFamily,
+      // Stock Tailwind values, restated so each one can be multiplied by
+      // `--font-scale`. At the default scale of 1 this renders identically to
+      // the built-in scale it replaces.
+      fontSize: {
+        xs: scaled("0.75rem", "1rem"),
+        sm: scaled("0.875rem", "1.25rem"),
+        base: scaled("1rem", "1.5rem"),
+        lg: scaled("1.125rem", "1.75rem"),
+        xl: scaled("1.25rem", "1.75rem"),
+        "2xl": scaled("1.5rem", "2rem"),
+        "3xl": scaled("1.875rem", "2.25rem"),
+        "4xl": scaled("2.25rem", "2.5rem"),
+        "5xl": scaled("3rem", "1"),
+        "6xl": scaled("3.75rem", "1"),
+        "7xl": scaled("4.5rem", "1"),
+        "8xl": scaled("6rem", "1"),
+        "9xl": scaled("8rem", "1"),
+      },
       keyframes: {
         "accordion-down": {
           from: { height: "0" },
@@ -112,5 +175,15 @@ module.exports = {
       },
     },
   },
-  plugins: [animate],
+  plugins: [
+    animate,
+    // Declares the default so the property is visible in devtools, and gives
+    // `<body>` a scaled size so text carrying no `text-*` utility follows the
+    // control too.
+    ({ addBase }) =>
+      addBase({
+        ":root": { "--font-scale": "1" },
+        body: { fontSize: `calc(1rem * ${SCALE})` },
+      }),
+  ],
 }
