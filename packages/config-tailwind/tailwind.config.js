@@ -4,11 +4,21 @@ const spacingTokens = require("@typhed/brand/tokens/spacing.json")
 const typographyTokens = require("@typhed/brand/tokens/typography.json")
 
 /**
- * The multiplier every font size in this preset is expressed against. The
- * header's `FontSizeToggle` writes it onto `<html>`; the `, 1` fallback means
- * a page that never sets it renders at the stock Tailwind size.
+ * The multiplier every font size in this preset is expressed against. It is
+ * `1` everywhere by default and is redefined to the reader's setting on the
+ * reading scope below, so only page content follows the control. The `, 1`
+ * fallback means a page that never sets it renders at the stock Tailwind size.
  */
 const SCALE = "var(--font-scale, 1)"
+
+/**
+ * Where the reader's text-size choice applies. `main` is the semantic content
+ * region every TyPhed layout already wraps its page in; the attribute is the
+ * escape hatch for a surface that needs the same treatment without being a
+ * `main`. Everything outside this selector - the header, the footer, the
+ * copyright bar - keeps `--font-scale: 1` from `:root` and never moves.
+ */
+const READING_SCOPE = "main, [data-font-scale-scope]"
 
 /**
  * One entry of the type scale, expressed as a multiple of `--font-scale`.
@@ -50,11 +60,17 @@ function scaled(size, lineHeight) {
  * all, which is the loud failure the arrangement is designed for.
  *
  * `--font-scale` is the one thing this preset does emit from a plugin, and the
- * reasoning above does not apply to it: the default and the base size are
- * static literals written in this file, not values read from JSON, and Tailwind
- * watches its own config. It exists so the header's text-size control can grow
- * type without growing anything else. Every `text-*` utility multiplies by it;
- * no spacing, height, radius, or gap utility ever does.
+ * reasoning above does not apply to it: the defaults are static literals
+ * written in this file, not values read from JSON, and Tailwind watches its own
+ * config. It exists so the header's text-size control can grow type without
+ * growing anything else. Every `text-*` utility multiplies by it; no spacing,
+ * height, radius, or gap utility ever does.
+ *
+ * The control is scoped by inheritance rather than by opting surfaces out. The
+ * property resolves to `1` at `:root` and is redefined to the reader's setting
+ * on `READING_SCOPE`, so page content inherits the choice and chrome outside
+ * that subtree keeps the stock size. Nothing in a component has to know it is
+ * in the header to be excluded.
  *
  * The one sharp edge: an arbitrary size such as `text-[0.625rem]` bypasses the
  * scale entirely. That is the right default, because opting out stays trivial,
@@ -177,13 +193,16 @@ module.exports = {
   },
   plugins: [
     animate,
-    // Declares the default so the property is visible in devtools, and gives
-    // `<body>` a scaled size so text carrying no `text-*` utility follows the
-    // control too.
+    // Declares both defaults so the pair is visible in devtools, then opens the
+    // reading scope. The `font-size` on the scope carries the choice to content
+    // wearing no `text-*` utility of its own.
     ({ addBase }) =>
       addBase({
-        ":root": { "--font-scale": "1" },
-        body: { fontSize: `calc(1rem * ${SCALE})` },
+        ":root": { "--font-scale-setting": "1", "--font-scale": "1" },
+        [READING_SCOPE]: {
+          "--font-scale": "var(--font-scale-setting, 1)",
+          fontSize: `calc(1rem * ${SCALE})`,
+        },
       }),
   ],
 }

@@ -10,10 +10,10 @@ import { Button } from "./ui/button"
 
 /**
  * The permanent top menu bar: brand logo (left), primary navigation, the
- * Login / Sign Up call-to-action and the two accessibility switches — text
- * size and light/dark — on the right. It is sticky so it stays available
- * while the single-page layout scrolls, and its translucent backdrop-blur
- * keeps content legible as sections pass beneath it.
+ * Login / Sign Up call-to-action, the text-size control and the light/dark
+ * switch (right). It is sticky so it stays available while the single-page
+ * layout scrolls, and its translucent backdrop-blur keeps content legible as
+ * sections pass beneath it.
  *
  * It is a Server Component. Only the interactive parts are client
  * components: `FontSizeToggle`, `ThemeToggle` and `MobileNav` (the
@@ -21,9 +21,13 @@ import { Button } from "./ui/button"
  * `NAV_LINKS` from `@typhed/brand`, so the two never drift.
  *
  * It also inlines one small script, which is why the header rather than the
- * toggle carries it: being a Server Component this close to the top of the
+ * control carries it: being a Server Component this close to the top of the
  * body, its markup is parsed before any text below it paints, so the saved
  * text size is applied without a visible reflow.
+ *
+ * The header itself never resizes. `FontSizeToggle` only reaches the reading
+ * scope the preset opens on `main`, so the toolbar, the footer, and the
+ * copyright bar keep the stock type at every step.
  *
  * The call-to-action is a slot: pass `authSlot` (desktop) and
  * `mobileAuthSlot` (forwarded to `MobileNav`) to inject an auth control such
@@ -41,8 +45,8 @@ export function SiteHeader({
     <header className="sticky top-0 z-40 w-full border-b border-border/40 bg-background/70 backdrop-blur-md">
       {/*
         Applies the saved text size before the page below paints. Everything
-        readable renders after this point, so a visitor on the larger setting
-        never sees the default size first. See lib/font-scale.ts.
+        readable renders after this point, so a visitor on a non-default size
+        never sees 16px first. See lib/font-scale.ts.
       */}
       <script dangerouslySetInnerHTML={{ __html: FONT_SCALE_SCRIPT }} />
 

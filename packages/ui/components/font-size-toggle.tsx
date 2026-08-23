@@ -1,107 +1,140 @@
 "use client"
 
 import * as React from "react"
+import { AArrowDown, AArrowUp, ALargeSmall } from "lucide-react"
 
 import {
-  FONT_SCALE_KEY,
-  FONT_SCALE_LARGE,
-  FONT_SCALE_NORMAL,
-  FONT_SCALE_PROPERTY,
+  clampFontStep,
+  fontScaleForStep,
+  FONT_SCALE_SETTING_PROPERTY,
+  FONT_STEP_KEY,
+  FONT_STEP_MAX,
+  FONT_STEP_MIN,
+  FONT_STEP_PX,
 } from "../lib/font-scale"
 import { cn } from "../lib/utils"
 
+/** Shared by the three buttons so the group reads as one segmented control. */
+const CONTROL =
+  "inline-flex h-full w-7 items-center justify-center text-muted-foreground transition-colors hover:text-brand focus-visible:relative focus-visible:z-10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-30"
+
 /**
- * Text-size switch styled as a sliding toggle, the twin of `ThemeToggle`: the
- * track carries a small and a large "A", and the knob slides to the active
- * side. It sets `--font-scale`, which the Tailwind preset multiplies into every
- * `text-*` size and `rem` line height and into nothing else, so the page gets
- * larger type rather than a browser-style zoom — spacing, heights, and gaps do
- * not move.
+ * Text-size control for the page's reading area: smaller, reset, larger.
  *
- * Until mounted it renders in the normal position so the server markup matches
- * the first client render (the stored preference is only known in the browser),
- * then settles to the real one — this avoids a hydration mismatch. The page
- * itself is already at the right size by then: `SiteHeader` inlines a script
- * that applies the preference before paint, and this reads the result back.
+ * Seven steps, three either side of the default, each moving body copy by
+ * 2.5px (8.5px at the smallest, 16px at rest, 23.5px at the largest). The rest
+ * of the type scale moves proportionally, so the hierarchy between a heading
+ * and a caption survives at every step.
+ *
+ * It sets `--font-scale-setting` on `<html>`, which the Tailwind preset hands
+ * to `main` and to anything marked `data-font-scale-scope`. Page content
+ * inherits it; the header, footer, and copyright bar sit outside that subtree
+ * and keep the stock size, so the chrome stays put while the reading area
+ * responds. Spacing, heights, and gaps never reference the property, which is
+ * what makes this different from browser zoom.
+ *
+ * Until mounted it renders at the default step so the server markup matches the
+ * first client render (the stored choice is only known in the browser), then
+ * settles to the real one - this avoids a hydration mismatch. The page itself
+ * is already at the right size by then: `SiteHeader` inlines a script that
+ * applies the preference before paint, and this reads the result back.
  */
 export function FontSizeToggle() {
-  const [large, setLarge] = React.useState(false)
+  const [step, setStep] = React.useState(0)
   const [mounted, setMounted] = React.useState(false)
 
   React.useEffect(() => {
-    // Read what the inline script already applied rather than storage, so the
-    // knob can never disagree with the type on screen.
-    const applied = document.documentElement.style.getPropertyValue(
-      FONT_SCALE_PROPERTY,
-    )
-    setLarge(Number.parseFloat(applied) === FONT_SCALE_LARGE)
+    let stored = 0
+
+    try {
+      stored = clampFontStep(Number(window.localStorage.getItem(FONT_STEP_KEY)))
+    } catch {
+      // Private browsing or a partitioned storage context. Stay at the default.
+    }
+
+    setStep(stored)
     setMounted(true)
   }, [])
 
-  const isLarge = mounted && large
+  // Before mount the knobs must agree with the server render, not with storage.
+  const current = mounted ? step : 0
 
-  const toggle = () => {
-    const next = isLarge ? FONT_SCALE_NORMAL : FONT_SCALE_LARGE
+  const apply = (next: number) => {
+    const clamped = clampFontStep(next)
+
     document.documentElement.style.setProperty(
-      FONT_SCALE_PROPERTY,
-      String(next),
+      FONT_SCALE_SETTING_PROPERTY,
+      String(fontScaleForStep(clamped)),
     )
 
     try {
-      window.localStorage.setItem(FONT_SCALE_KEY, String(next))
+      window.localStorage.setItem(FONT_STEP_KEY, String(clamped))
     } catch {
-      // Private browsing or a partitioned storage context. The choice still
-      // applies to this page; it just will not survive a reload.
+      // The choice still applies to this page; it just will not survive a
+      // reload.
     }
 
-    setLarge(!isLarge)
+    setStep(clamped)
   }
 
+  const offset = current * FONT_STEP_PX
+  const label =
+    current === 0
+      ? "Text size: default"
+      : `Text size: ${offset > 0 ? "+" : ""}${offset}px`
+
   return (
-    <button
-      type="button"
-      role="switch"
-      aria-checked={isLarge}
-      aria-label="Toggle larger text"
-      title="Toggle larger text"
-      onClick={toggle}
-      className="relative inline-flex h-8 w-14 shrink-0 items-center rounded-full border border-border bg-secondary px-1 ring-offset-background transition-colors hover:border-brand/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+    <div
+      role="group"
+      aria-label="Text size"
+      className="inline-flex h-8 shrink-0 items-center overflow-hidden rounded-full border border-border bg-secondary transition-colors hover:border-brand/50"
     >
+      <button
+        type="button"
+        onClick={() => apply(current - 1)}
+        disabled={current <= FONT_STEP_MIN}
+        aria-label="Decrease text size"
+        title="Decrease text size"
+        className={cn(CONTROL, "pl-0.5")}
+      >
+        <AArrowDown className="h-4 w-4" aria-hidden="true" />
+      </button>
+
       {/*
-        The glyphs are deliberately sized with arbitrary values, which bypass
-        the scale. A `text-*` utility here would grow the control along with the
-        page and burst its fixed w-14 track.
+        The reset is the first thing to go when the toolbar gets tight: on a
+        360px screen the brand mark, this group, the theme switch and the
+        hamburger do not all fit. Both steppers stay, so every size is still
+        reachable without it.
       */}
-      <span
-        className="pointer-events-none absolute left-1.5 text-[0.625rem] font-semibold leading-none text-muted-foreground"
-        aria-hidden="true"
+      <button
+        type="button"
+        onClick={() => apply(0)}
+        disabled={current === 0}
+        aria-label="Reset text size"
+        title="Reset text size"
+        className={cn(CONTROL, "hidden sm:inline-flex")}
       >
-        A
-      </span>
-      <span
-        className="pointer-events-none absolute right-1.5 text-[0.9375rem] font-semibold leading-none text-muted-foreground"
-        aria-hidden="true"
+        <ALargeSmall className="h-4 w-4" aria-hidden="true" />
+      </button>
+
+      <button
+        type="button"
+        onClick={() => apply(current + 1)}
+        disabled={current >= FONT_STEP_MAX}
+        aria-label="Increase text size"
+        title="Increase text size"
+        className={cn(CONTROL, "pr-0.5")}
       >
-        A
+        <AArrowUp className="h-4 w-4" aria-hidden="true" />
+      </button>
+
+      {/*
+        The buttons only ever announce what they do, never where the reader
+        ended up. This says that, once, after each press.
+      */}
+      <span aria-live="polite" className="sr-only">
+        {mounted ? label : null}
       </span>
-      <span
-        className={cn(
-          "pointer-events-none relative z-10 inline-flex h-6 w-6 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-sm transition-transform duration-200",
-          isLarge ? "translate-x-6" : "translate-x-0",
-        )}
-      >
-        {mounted ? (
-          <span
-            className={cn(
-              "font-semibold leading-none",
-              isLarge ? "text-[0.9375rem]" : "text-[0.625rem]",
-            )}
-            aria-hidden="true"
-          >
-            A
-          </span>
-        ) : null}
-      </span>
-    </button>
+    </div>
   )
 }

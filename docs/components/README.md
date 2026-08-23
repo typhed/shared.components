@@ -65,8 +65,10 @@ in dark, indigo leads in light. When a component page lists "Colors And Tokens",
   * **Fonts**: `font-display` is Space Grotesk and `font-sans` is Inter, both wired in
     `app/layout.tsx`.
   * **Text size**: every `text-*` utility resolves through the `--font-scale` custom property, which
-    [FontSizeToggle](font-size-toggle.md) sets. Spacing never references it, so larger type is not page zoom. An
-    arbitrary `text-[...]` value opts out by default and needs an explicit `calc` to follow the control.
+    [FontSizeToggle](font-size-toggle.md) drives across seven steps of 2.5px each. The property is `1` at `:root` and is
+    redefined on `main`, so page content follows the reader while the header, footer, and copyright bar keep the stock
+    size. Spacing never references it, so larger type is not page zoom. An arbitrary `text-[...]` value opts out by
+    default and needs an explicit `calc` to follow the control.
 
 ## 🤖 Notes For LLM Agents
 

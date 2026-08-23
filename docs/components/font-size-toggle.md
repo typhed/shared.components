@@ -6,26 +6,29 @@
 
 <div align = "justify">
 
-`FontSizeToggle` is a sliding text-size switch in the header, the twin of [ThemeToggle](theme-toggle.md). The track holds
-a small "A" (left) and a large "A" (right), and a circular knob slides between them to indicate the active size. A click
-switches between the normal scale and the larger one. Until the component mounts it shows the normal position, because
-the stored preference is only known in the browser and a guess would cause a hydration mismatch.
+`FontSizeToggle` is the reader's text-size control in the header: a segmented group of three buttons, smaller / reset /
+larger. It offers seven steps, three either side of the default, and each step moves body copy by exactly 2.5 pixels.
 
-It grows **type only**. Every `text-*` utility resolves through the `--font-scale` custom property, and no spacing,
-height, radius, or gap utility ever references it, so padding, the header height, and the layout grid hold still while
-the words get bigger. That is the difference between this control and browser zoom, and it is the entire reason the
-mechanism exists.
+It changes the size of the **page content only**. The header, the footer, and the copyright bar keep the stock type at
+every step, because the control writes its setting to a scope that covers `main` and nothing else. Chrome is not a
+reading surface and does not follow the reader.
 
-It is a Client Component (`"use client"`) that reads and writes `--font-scale` on `document.documentElement` and persists
-the choice in `localStorage`. It is a native semantic switch (`role="switch"` with `aria-checked`).
+It also changes type **only**. No spacing, height, radius, or gap utility references the scale, so padding, the header
+height, and the layout grid hold still while the words grow. That is what separates this control from browser zoom, and
+it is the entire reason the mechanism exists.
+
+It is a Client Component (`"use client"`) that writes `--font-scale-setting` onto `document.documentElement` and persists
+the chosen step in `localStorage`.
 
 ## Source And Import
 
   * **Source**: [packages/ui/components/font-size-toggle.tsx](../../packages/ui/components/font-size-toggle.tsx)
-  * **Constants**: [packages/ui/lib/font-scale.ts](../../packages/ui/lib/font-scale.ts)
-  * **Depends on**: the `fontSize` scale in
-    [packages/config-tailwind/tailwind.config.js](../../packages/config-tailwind/tailwind.config.js)
-  * **Requires**: nothing at runtime. It is mounted by [SiteHeader](site-header.md) and needs no provider.
+  * **Constants and helpers**: [packages/ui/lib/font-scale.ts](../../packages/ui/lib/font-scale.ts)
+  * **Depends on**: the `fontSize` scale and the reading-scope rule in
+    [packages/config-tailwind/tailwind.config.js](../../packages/config-tailwind/tailwind.config.js), and
+    `AArrowDown`, `ALargeSmall`, `AArrowUp` from `lucide-react`
+  * **Requires**: a `main` element (or a `[data-font-scale-scope]` element) somewhere in the page. It is mounted by
+    [SiteHeader](site-header.md) and needs no provider.
 
 ```tsx
 import { FontSizeToggle } from "@typhed/ui/components/font-size-toggle"
@@ -33,47 +36,78 @@ import { FontSizeToggle } from "@typhed/ui/components/font-size-toggle"
 
 ## Props
 
-`FontSizeToggle` takes no props. It reads the active scale from the document and writes the visitor's choice back.
+`FontSizeToggle` takes no props. It reads the stored step on mount and writes the visitor's choice back.
 
 | Prop | Type | Default | Description |
 | :---: | :---: | :---: | --- |
-| none | n/a | n/a | Behavior is fully driven by `--font-scale` and `localStorage`. |
+| none | n/a | n/a | Behavior is fully driven by `--font-scale-setting` and `localStorage`. |
 
-## How The Scale Works
+## The Steps
 
-The preset in [tailwind.config.js](../../packages/config-tailwind/tailwind.config.js) restates Tailwind's stock type
-scale through a `scaled()` helper, so every size becomes a multiple of one custom property:
+Seven levels. Each press moves body copy by `FONT_STEP_PX`, which is 2.5 pixels against the stock 16 pixel root. The
+result is stored as a ratio so the rest of the type scale moves with it proportionally.
+
+| Step | Multiplier | Body Copy | `text-sm` | `text-5xl` |
+| :---: | ---: | ---: | ---: | ---: |
+| `-3` | 0.53125 | 8.5px | 7.4px | 25.5px |
+| `-2` | 0.68750 | 11.0px | 9.6px | 33.0px |
+| `-1` | 0.84375 | 13.5px | 11.8px | 40.5px |
+| `0` | 1.00000 | 16.0px | 14.0px | 48.0px |
+| `1` | 1.15625 | 18.5px | 16.2px | 55.5px |
+| `2` | 1.31250 | 21.0px | 18.4px | 63.0px |
+| `3` | 1.46875 | 23.5px | 20.6px | 70.5px |
+
+A ratio rather than a flat pixel offset, because a flat offset added to every size would leave `text-5xl` almost
+unchanged while jumping `text-xs` by a fifth, flattening the type hierarchy a little further at each step. A ratio keeps
+the page looking like itself at every level.
+
+The step is what gets persisted, as a small integer. `clampFontStep` rounds and clamps everything read back from storage
+as well as every button press, so a hand-edited value cannot push the page to an unreadable size.
+
+## How The Scoping Works
+
+Two custom properties, which is the whole trick:
+
+| Property | Set On | Meaning |
+| :---: | :---: | --- |
+| `--font-scale-setting` | `<html>` | The visitor's choice. Written by the control and by the pre-paint script. |
+| `--font-scale` | `:root`, then the scope | What every `text-*` utility multiplies by. |
+
+The preset declares `--font-scale: 1` on `:root`, then redefines it on the reading scope:
 
 ```css
+:root                            { --font-scale-setting: 1; --font-scale: 1; }
+main, [data-font-scale-scope]    { --font-scale: var(--font-scale-setting, 1);
+                                   font-size: calc(1rem * var(--font-scale, 1)); }
+
 .text-sm { font-size: calc(0.875rem * var(--font-scale, 1)); line-height: calc(1.25rem * var(--font-scale, 1)); }
 .h-16    { height: 4rem; }
 ```
 
-  * **Font sizes and `rem` line heights** are multiplied. Unitless line heights (`text-5xl` and up) are already relative
-    to the font size and scale on their own, as does every `em` value such as `tracking-tight`.
-  * **Nothing else is.** Grepping the compiled stylesheet for `--font-scale` returns `font-size` and `line-height` and no
-    other property. That is the invariant to protect.
-  * **The `, 1` fallback** means a page that never sets the property renders at exactly the stock Tailwind size, so the
-    default view is unchanged from before the control existed.
-  * `<body>` also carries `font-size: calc(1rem * var(--font-scale, 1))`, which catches text wearing no `text-*` utility.
+Custom properties inherit, so everything inside `main` picks the reader's choice up, and everything outside it keeps the
+`1` from `:root`. The header, the footer, and the copyright bar are excluded structurally rather than by opting out one
+at a time. No component has to know it renders in the chrome in order to stay put, and a new footer link added tomorrow
+is excluded automatically.
 
-| Step | `--font-scale` | `text-base` Resolves To |
-| :---: | :---: | ---: |
-| Normal | `1` | 16px |
-| Large | `1.25` | 20px |
+The `font-size` on the scope carries the choice to content wearing no `text-*` utility of its own.
+
+### What Does And Does Not Scale
+
+  * **Scales**: every `text-*` utility and every `rem` line height inside `main`. Unitless line heights (`text-5xl` and
+    up) are already relative to the font size, as is every `em` value such as `tracking-tight`, so those follow for free.
+  * **Never scales**: any spacing, height, width, radius, or gap utility, anywhere. Grepping the compiled stylesheet for
+    `--font-scale` returns `font-size` and `line-height` and no other property. That is the invariant to protect.
+  * **Never scales**: anything outside `main`, at any step.
 
 ### Arbitrary Sizes Opt Out By Default
 
 An arbitrary value such as `text-[0.625rem]` bypasses the scale entirely, because Tailwind emits it verbatim. That is the
-right default, since opting out stays trivial, but it means an arbitrary size that **should** follow the control has to
-say so:
+right default, since opting out stays trivial, but it means an arbitrary size inside `main` that **should** follow the
+reader has to say so:
 
 ```tsx
-// Opted in: this label grows with the control.
+// Opted in: this label follows the control.
 <span className="text-[calc(0.625rem*var(--font-scale,1))]">Days</span>
-
-// Opted out: this glyph must not grow, or it bursts its fixed-width track.
-<span className="text-[0.9375rem]">A</span>
 ```
 
 Both call sites in this package are deliberate. [countdown-timer.tsx](../../packages/ui/components/countdown-timer.tsx)
@@ -87,29 +121,32 @@ Tailwind reads an unspaced arbitrary value cleanly.
 
 ## Anatomy
 
-It is a native `<button type="button" role="switch" aria-checked={isLarge}>` that renders:
+The root is a `<div role="group" aria-label="Text size">` styled as one segmented pill (`h-8 rounded-full border
+border-border bg-secondary`), matching [ThemeToggle](theme-toggle.md) in height and surface so the two read as a pair.
+It holds three `<button>` elements, each `w-7`:
 
-  * **Track**: a rounded-full pill (`h-8 w-14 rounded-full`) with `border-border` and `bg-secondary` fill, holding a
-    small "A" at `left-1.5` and a large "A" at `right-1.5`, both in `text-muted-foreground`. Identical geometry to
-    [ThemeToggle](theme-toggle.md), so the two switches read as one pair.
-  * **Knob**: an animated circle (`h-6 w-6 rounded-full`) with `bg-primary` fill and `text-primary-foreground` glyph,
-    sliding via `translate-x-0` (normal) or `translate-x-6` (large).
-  * **Glyph sizing**: all three "A" glyphs use arbitrary sizes (`text-[0.625rem]` and `text-[0.9375rem]`) precisely so
-    they do **not** scale. A `text-*` utility here would grow the control along with the page and burst its fixed `w-14`
-    track.
+  1. **Decrease**: a lucide `AArrowDown`, `h-4 w-4`. Disabled at step `-3`.
+  2. **Reset**: a lucide `ALargeSmall`. Disabled at step `0`, which is its resting state on a fresh visit.
+  3. **Increase**: a lucide `AArrowUp`. Disabled at step `3`.
+
+A visually hidden `aria-live="polite"` region follows the buttons and carries the resulting size after each press.
+
+### Why The Reset Hides On Small Screens
+
+The reset button carries `hidden sm:inline-flex`. On a 360 pixel screen the brand mark, this group, the theme switch, and
+the hamburger do not all fit on one row. The reset is the right thing to drop, because both steppers stay and every size
+is still reachable without it. Keep that breakpoint unless the toolbar loses something else.
 
 ## Behavior
 
-  * **Mount guard**: a `mounted` flag stays false during server render and the first client paint, so the knob remains in
-    the normal position. After mount it settles to the real one. This is what prevents the hydration warning.
-  * **Reading the current value**: on mount it reads `--font-scale` back off `document.documentElement.style` rather than
-    re-reading `localStorage`, so the knob can never disagree with the type actually on screen.
-  * **Toggle**: `onClick` writes the next scale onto `document.documentElement` and to `localStorage`. The storage write
-    is wrapped in `try` / `catch`, because private browsing and partitioned storage both throw; the choice still applies
-    to the current page when it cannot be saved.
-  * **First paint**: [SiteHeader](site-header.md) inlines a small script that applies the saved value before the page
-    below it paints, the same trick `next-themes` uses for the colour theme. Without it, a visitor on the larger setting
-    would watch the page render at the default size and then reflow.
+  * **Mount guard**: a `mounted` flag stays false during server render and the first client paint, so the buttons render
+    at the default step. After mount they settle to the stored one. This is what prevents the hydration warning.
+  * **Persistence**: the chosen step is written to `localStorage` under `typhed-font-step`. The write is wrapped in `try`
+    / `catch`, because private browsing and partitioned storage both throw; the choice still applies to the current page
+    when it cannot be saved.
+  * **First paint**: [SiteHeader](site-header.md) inlines a small script that applies the saved step before the page
+    below it paints, the same trick `next-themes` uses for the colour theme. Without it, a visitor on a non-default size
+    would watch the page render at 16px and then reflow.
 
 ## Colors And Tokens
 
@@ -118,12 +155,12 @@ this control deliberately reuses the same tokens.
 
 | Element | Token / Class |
 | :---: | :---: |
-| Track background | `bg-secondary` |
-| Track border | `border-border` |
-| Track glyphs | `text-muted-foreground` |
-| Knob fill | `bg-primary` |
-| Knob glyph | `text-primary-foreground` |
-| Hover | `hover:border-brand/50` |
+| Group background | `bg-secondary` |
+| Group border | `border-border` |
+| Icons (resting) | `text-muted-foreground` |
+| Icons (hover) | `hover:text-brand` |
+| Group border (hover) | `hover:border-brand/50` |
+| Disabled button | `disabled:opacity-30` |
 | Focus ring | `ring-ring` |
 
 ## Examples
@@ -137,56 +174,72 @@ this control deliberately reuses the same tokens.
 ```
 
 ```tsx
-// Reading or setting the scale from outside the component.
+// A surface that should follow the reader without being a <main>.
+<aside data-font-scale-scope>
+  <ArticleSidebar />
+</aside>
+```
+
+```tsx
+// Reading or setting the step from outside the component.
 import {
-  FONT_SCALE_KEY,
-  FONT_SCALE_LARGE,
-  FONT_SCALE_PROPERTY,
+  fontScaleForStep,
+  FONT_SCALE_SETTING_PROPERTY,
+  FONT_STEP_KEY,
 } from "@typhed/ui/lib/font-scale"
 
 document.documentElement.style.setProperty(
-  FONT_SCALE_PROPERTY,
-  String(FONT_SCALE_LARGE),
+  FONT_SCALE_SETTING_PROPERTY,
+  String(fontScaleForStep(2)),
 )
-window.localStorage.setItem(FONT_SCALE_KEY, String(FONT_SCALE_LARGE))
+window.localStorage.setItem(FONT_STEP_KEY, "2")
 ```
 
 ## Accessibility
 
-  * The switch carries `role="switch"`, `aria-checked={isLarge}` (true when large, false when normal),
-    `aria-label="Toggle larger text"`, and a matching `title`.
-  * All three "A" glyphs are `aria-hidden="true"` so a screen reader announces the label rather than three stray letters.
-  * The focus ring is applied via `focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2` for keyboard
-    navigation, and is bright in both themes.
-  * As a native `<button>`, it responds to both Space and Enter and needs no key handling of its own.
-  * The control is an accessibility affordance in its own right. It gives a visitor larger type without the layout
-    reflow that browser zoom forces, which is what makes it usable on the snap-scrolling single-page layout.
+  * The group carries `role="group"` with `aria-label="Text size"`, so the three buttons are announced as one control
+    rather than three loose icons.
+  * Each button has an explicit `aria-label` and a matching `title`: "Decrease text size", "Reset text size", "Increase
+    text size".
+  * Every icon is `aria-hidden="true"`, so a screen reader announces the label rather than the glyph.
+  * A button is `disabled` at the end of its range, which both stops the press and tells assistive technology that the
+    limit has been reached.
+  * The buttons say what they do but never where the reader ended up, so a visually hidden `aria-live="polite"` region
+    announces the result after each press ("Text size: +5px", or "Text size: default").
+  * The focus ring uses `focus-visible:ring-2 focus-visible:ring-ring` and is raised above its neighbours with
+    `focus-visible:relative focus-visible:z-10`, so it is not clipped by the group's `overflow-hidden`.
+  * As native `<button>` elements they respond to both Space and Enter and need no key handling of their own.
+  * The control is an accessibility affordance in its own right. It gives a reader larger type without the layout reflow
+    browser zoom forces, which is what makes it usable on the snap-scrolling single-page layout.
 
 ## Usage Guidelines
 
-Render it once, inside `SiteHeader`. Do not duplicate it across the page; two switches fight over the same custom
-property and confuse users. The track width is fixed at `w-14` to fit both glyphs, matching `ThemeToggle`; do not resize
-it. The knob slide distance is `translate-x-6`; adjust only if the track width changes.
+Render it once, inside `SiteHeader`. Do not duplicate it; two groups fight over the same custom property.
 
-Both steps live in [lib/font-scale.ts](../../packages/ui/lib/font-scale.ts). To change how large "large" is, edit
-`FONT_SCALE_LARGE` there and nothing else. Keep the value modest: the header is a fixed `h-16` and does not grow, so a
-scale much beyond `1.25` starts to crowd the nav links against it.
+Every number lives in [lib/font-scale.ts](../../packages/ui/lib/font-scale.ts). To change how far a press moves the page,
+edit `FONT_STEP_PX`; to change how many presses there are, edit `FONT_STEP_MIN` and `FONT_STEP_MAX`. The pre-paint script
+is generated from the same constants, so it follows automatically. Nothing else needs touching.
+
+Be deliberate about widening the range. At step `-3` body copy is already 8.5px and `text-xs` is 7.4px, which is at the
+edge of legible; the small end exists for readers who want more on screen, not as a size anyone should land on by
+accident.
 
 `FONT_SCALE_SCRIPT` is deliberately one single template literal. Splitting it across two joined by `+` reads better at
-this width, but Next's SWC minifier folds the two and drops the first one's trailing `");` on the way, shipping a script
-that cannot parse. Nothing fails loudly when that happens; the preference simply stops applying before paint. If that
-line ever needs to grow, verify the emitted `<script>` in a production build rather than trusting the source.
+this width, but Next's SWC minifier folds the two and drops the first one's trailing characters on the way, shipping a
+script that cannot parse. Nothing fails loudly when that happens; the preference simply stops applying before paint. If
+that line ever needs to grow, verify the emitted `<script>` in a production build rather than trusting the source.
 
 ## Do's And Don'ts
 
 | Do | Don't |
 | --- | --- |
+| Let the scope decide what follows the reader. | Opt individual chrome components out one at a time. |
+| Keep the header, footer, and copyright outside `main`. | Wrap the whole layout in `main` and let the chrome resize. |
 | Let every text size resolve through `--font-scale`. | Reference the property from a spacing, height, or gap utility. |
-| Keep the mount guard (normal position on the server). | Render the stored scale on the server and trigger a mismatch. |
-| Keep `role="switch"` and `aria-checked`. | Replace it with a Button or an icon-only link. |
-| Use one switch per page. | Place multiple switches that fight over the property. |
-| Size the "A" glyphs with arbitrary values. | Use a `text-*` utility on them and let the control grow itself. |
+| Keep the mount guard (default step on the server). | Render the stored step on the server and trigger a mismatch. |
+| Clamp every step through `clampFontStep`. | Trust an integer read back from `localStorage`. |
 | Opt an arbitrary size in with an explicit `calc`. | Assume `text-[...]` follows the control on its own. |
+| Change the range by editing the constants. | Hardcode a step count in the component or the script. |
 | Keep the pre-paint script as one template literal. | Split it with `+` and let the minifier silently break it. |
 
 </div>

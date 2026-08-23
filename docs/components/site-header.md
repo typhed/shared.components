@@ -8,9 +8,12 @@
 
 `SiteHeader` is the permanent top menu bar. It stays visible while the single-page layout scrolls, stickied with a
 translucent backdrop-blur so content remains legible as sections pass beneath it. The left side shows the brand logo;
-the desktop right side shows the primary nav links, the Login / Sign Up call-to-action, the two accessibility switches
-(text size and light/dark), and the mobile menu button. The mobile menu collapses the nav and CTA into a full-width
-hamburger panel.
+the desktop right side shows the primary nav links, the Login / Sign Up call-to-action, the text-size control, the
+light/dark switch, and the mobile menu button. The mobile menu collapses the nav and CTA into a full-width hamburger
+panel.
+
+The header never resizes itself. [FontSizeToggle](font-size-toggle.md) only reaches the reading scope the preset opens on
+`main`, so the toolbar keeps the stock type at every step, as do the footer and the copyright bar.
 
 It is a Server Component. Both the desktop and mobile nav read `NAV_LINKS` and `LOGIN_CTA` from
 [@typhed/brand](https://github.com/typhed/shared.documents/blob/master/brand/index.ts), so the two never drift. The
@@ -58,9 +61,10 @@ size and then reflow. The tag is `display: none` and never affects layout.
   3. **Login / Sign Up** (hidden on mobile, shown md and above): a `Button variant="default" size="sm"` as an anchor. The
      label and href come from `LOGIN_CTA` in [@typhed/brand](https://github.com/typhed/shared.documents/blob/master/brand/index.ts), so both desktop and
      mobile use the same CTA text and destination. Currently links to `#` (placeholder until the auth flow exists).
-  4. **Font Size Toggle**: a [FontSizeToggle](font-size-toggle.md) that switches the page between the normal and the
-     larger text scale. It sets `--font-scale`, which only font sizes and `rem` line heights reference, so type grows
-     without the layout reflow browser zoom causes. Shown at every breakpoint, including mobile.
+  4. **Font Size Toggle**: a [FontSizeToggle](font-size-toggle.md) group of three buttons (smaller, reset, larger)
+     stepping the page content through seven text sizes, 2.5px apart. It sets `--font-scale-setting`, which only reaches
+     `main`, so the header itself never moves. The reset hides below `sm` to keep the toolbar on one row; both steppers
+     stay at every breakpoint.
   5. **Theme Toggle**: a [ThemeToggle](theme-toggle.md) component that lets users switch between dark and light themes.
   6. **Mobile Menu Button** (hidden md and above): a hamburger `Button variant="ghost" size="icon"` that toggles the mobile
      nav panel. See the **Mobile Navigation** section below.
@@ -141,9 +145,10 @@ export default function RootLayout({ children }) {
     `aria-controls="mobile-menu"`, which links the button to the panel it controls.
   * The mobile menu panel has `id="mobile-menu"`, matching the button's `aria-controls`.
   * Each mobile nav link has an `onClick` that closes the menu, so screen reader users are not trapped.
-  * The two switches keep their own contracts, recorded on [font-size-toggle.md](font-size-toggle.md) and
-    [theme-toggle.md](theme-toggle.md). Both are `role="switch"` with `aria-checked`, and both stay visible at every
-    breakpoint so the text-size control is reachable on a phone, where it matters most.
+  * The two controls keep their own contracts, recorded on [font-size-toggle.md](font-size-toggle.md) and
+    [theme-toggle.md](theme-toggle.md). The text-size control is a `role="group"` of labelled buttons with a live region;
+    the theme control is a `role="switch"` with `aria-checked`. Both stay reachable at every breakpoint, so a phone
+    reader can still resize the page.
   * The inline script is inert markup with no accessible representation. It sets a CSS custom property and nothing else.
 
 ## Usage Guidelines
