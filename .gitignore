@@ -1,0 +1,24 @@
+# This package is compiled from source by each consuming app; it has no build
+# output of its own. Only tool droppings are ignored.
+
+# Dependencies (installed by the consuming workspace, never here)
+node_modules/
+
+# TypeScript
+*.tsbuildinfo
+
+# Turborepo (the consumer runs the tasks; caches can land here)
+.turbo/
+
+# OS and editor
+.DS_Store
+Thumbs.db
+Desktop.ini
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+.idea/
+
+# Claude Code local state
+.claude/settings.local.json
+CLAUDE.local.md
