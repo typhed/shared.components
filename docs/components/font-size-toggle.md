@@ -6,8 +6,9 @@
 
 <div align = "justify">
 
-`FontSizeToggle` is the reader's text-size control in the header: a segmented group of three buttons, smaller / reset /
-larger. It offers seven steps, three either side of the default, and each step moves body copy by exactly 2.5 pixels.
+`FontSizeToggle` is the reader's text-size control in the header: two buttons, a small "A" to step down and a larger
+"A" to step up. It offers seven steps, three either side of the default, and each step moves body copy by exactly 2.5
+pixels. There is no reset; stepping back to the middle is what returns the page to 16px.
 
 It changes the size of the **page content only**. The header, the footer, and the copyright bar keep the stock type at
 every step, because the control writes its setting to a scope that covers `main` and nothing else. Chrome is not a
@@ -25,8 +26,7 @@ the chosen step in `localStorage`.
   * **Source**: [packages/ui/components/font-size-toggle.tsx](../../packages/ui/components/font-size-toggle.tsx)
   * **Constants and helpers**: [packages/ui/lib/font-scale.ts](../../packages/ui/lib/font-scale.ts)
   * **Depends on**: the `fontSize` scale and the reading-scope rule in
-    [packages/config-tailwind/tailwind.config.js](../../packages/config-tailwind/tailwind.config.js), and
-    `AArrowDown`, `ALargeSmall`, `AArrowUp` from `lucide-react`
+    [packages/config-tailwind/tailwind.config.js](../../packages/config-tailwind/tailwind.config.js)
   * **Requires**: a `main` element (or a `[data-font-scale-scope]` element) somewhere in the page. It is mounted by
     [SiteHeader](site-header.md) and needs no provider.
 
@@ -122,20 +122,15 @@ Tailwind reads an unspaced arbitrary value cleanly.
 ## Anatomy
 
 The root is a `<div role="group" aria-label="Text size">` styled as one segmented pill (`h-8 rounded-full border
-border-border bg-secondary`), matching [ThemeToggle](theme-toggle.md) in height and surface so the two read as a pair.
-It holds three `<button>` elements, each `w-7`:
+border-border bg-secondary`), matching [ThemeToggle](theme-toggle.md) in height, width, and surface so the two read as a
+pair. It holds two `<button>` elements, each `w-7`:
 
-  1. **Decrease**: a lucide `AArrowDown`, `h-4 w-4`. Disabled at step `-3`.
-  2. **Reset**: a lucide `ALargeSmall`. Disabled at step `0`, which is its resting state on a fresh visit.
-  3. **Increase**: a lucide `AArrowUp`. Disabled at step `3`.
+  1. **Decrease**: a small "A" at `text-[0.6875rem]`. Disabled at step `-3`.
+  2. **Increase**: a larger "A" at `text-[0.9375rem]`. Disabled at step `3`.
 
-A visually hidden `aria-live="polite"` region follows the buttons and carries the resulting size after each press.
-
-### Why The Reset Hides On Small Screens
-
-The reset button carries `hidden sm:inline-flex`. On a 360 pixel screen the brand mark, this group, the theme switch, and
-the hamburger do not all fit on one row. The reset is the right thing to drop, because both steppers stay and every size
-is still reachable without it. Keep that breakpoint unless the toolbar loses something else.
+Both glyph sizes are arbitrary values, which bypass the scale, so the control never resizes itself no matter where it is
+placed. A visually hidden `aria-live="polite"` region follows the buttons and carries the resulting size after each
+press.
 
 ## Behavior
 
@@ -157,8 +152,8 @@ this control deliberately reuses the same tokens.
 | :---: | :---: |
 | Group background | `bg-secondary` |
 | Group border | `border-border` |
-| Icons (resting) | `text-muted-foreground` |
-| Icons (hover) | `hover:text-brand` |
+| Glyphs (resting) | `text-muted-foreground` |
+| Glyphs (hover) | `hover:text-brand` |
 | Group border (hover) | `hover:border-brand/50` |
 | Disabled button | `disabled:opacity-30` |
 | Focus ring | `ring-ring` |
@@ -197,11 +192,10 @@ window.localStorage.setItem(FONT_STEP_KEY, "2")
 
 ## Accessibility
 
-  * The group carries `role="group"` with `aria-label="Text size"`, so the three buttons are announced as one control
-    rather than three loose icons.
-  * Each button has an explicit `aria-label` and a matching `title`: "Decrease text size", "Reset text size", "Increase
-    text size".
-  * Every icon is `aria-hidden="true"`, so a screen reader announces the label rather than the glyph.
+  * The group carries `role="group"` with `aria-label="Text size"`, so the two buttons are announced as one control
+    rather than a pair of loose letters.
+  * Each button has an explicit `aria-label` and a matching `title`: "Decrease text size" and "Increase text size".
+  * Both "A" glyphs are `aria-hidden="true"`, so a screen reader announces the label rather than the letter.
   * A button is `disabled` at the end of its range, which both stops the press and tells assistive technology that the
     limit has been reached.
   * The buttons say what they do but never where the reader ended up, so a visually hidden `aria-live="polite"` region

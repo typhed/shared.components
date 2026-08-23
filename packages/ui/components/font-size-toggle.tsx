@@ -1,7 +1,6 @@
 "use client"
 
 import * as React from "react"
-import { AArrowDown, AArrowUp, ALargeSmall } from "lucide-react"
 
 import {
   clampFontStep,
@@ -14,17 +13,23 @@ import {
 } from "../lib/font-scale"
 import { cn } from "../lib/utils"
 
-/** Shared by the three buttons so the group reads as one segmented control. */
+/**
+ * Shared by both buttons so the pair reads as one segmented control. The glyph
+ * size is set per button and uses an arbitrary value, which bypasses the scale:
+ * the control must never resize itself, wherever it is placed.
+ */
 const CONTROL =
-  "inline-flex h-full w-7 items-center justify-center text-muted-foreground transition-colors hover:text-brand focus-visible:relative focus-visible:z-10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-30"
+  "inline-flex h-full w-7 items-center justify-center font-semibold leading-none text-muted-foreground transition-colors hover:text-brand focus-visible:relative focus-visible:z-10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-30"
 
 /**
- * Text-size control for the page's reading area: smaller, reset, larger.
+ * Text-size control for the page's reading area: a small "A" to step down and a
+ * larger "A" to step up.
  *
  * Seven steps, three either side of the default, each moving body copy by
  * 2.5px (8.5px at the smallest, 16px at rest, 23.5px at the largest). The rest
  * of the type scale moves proportionally, so the hierarchy between a heading
- * and a caption survives at every step.
+ * and a caption survives at every step. Each button disables at its end of the
+ * range, which is how the reader knows there is nowhere further to go.
  *
  * It sets `--font-scale-setting` on `<html>`, which the Tailwind preset hands
  * to `main` and to anything marked `data-font-scale-scope`. Page content
@@ -56,7 +61,8 @@ export function FontSizeToggle() {
     setMounted(true)
   }, [])
 
-  // Before mount the knobs must agree with the server render, not with storage.
+  // Before mount the buttons must agree with the server render, not with
+  // storage.
   const current = mounted ? step : 0
 
   const apply = (next: number) => {
@@ -95,26 +101,9 @@ export function FontSizeToggle() {
         disabled={current <= FONT_STEP_MIN}
         aria-label="Decrease text size"
         title="Decrease text size"
-        className={cn(CONTROL, "pl-0.5")}
+        className={cn(CONTROL, "pl-0.5 text-[0.6875rem]")}
       >
-        <AArrowDown className="h-4 w-4" aria-hidden="true" />
-      </button>
-
-      {/*
-        The reset is the first thing to go when the toolbar gets tight: on a
-        360px screen the brand mark, this group, the theme switch and the
-        hamburger do not all fit. Both steppers stay, so every size is still
-        reachable without it.
-      */}
-      <button
-        type="button"
-        onClick={() => apply(0)}
-        disabled={current === 0}
-        aria-label="Reset text size"
-        title="Reset text size"
-        className={cn(CONTROL, "hidden sm:inline-flex")}
-      >
-        <ALargeSmall className="h-4 w-4" aria-hidden="true" />
+        <span aria-hidden="true">A</span>
       </button>
 
       <button
@@ -123,9 +112,9 @@ export function FontSizeToggle() {
         disabled={current >= FONT_STEP_MAX}
         aria-label="Increase text size"
         title="Increase text size"
-        className={cn(CONTROL, "pr-0.5")}
+        className={cn(CONTROL, "pr-0.5 text-[0.9375rem]")}
       >
-        <AArrowUp className="h-4 w-4" aria-hidden="true" />
+        <span aria-hidden="true">A</span>
       </button>
 
       {/*

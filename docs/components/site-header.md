@@ -61,10 +61,10 @@ size and then reflow. The tag is `display: none` and never affects layout.
   3. **Login / Sign Up** (hidden on mobile, shown md and above): a `Button variant="default" size="sm"` as an anchor. The
      label and href come from `LOGIN_CTA` in [@typhed/brand](https://github.com/typhed/shared.documents/blob/master/brand/index.ts), so both desktop and
      mobile use the same CTA text and destination. Currently links to `#` (placeholder until the auth flow exists).
-  4. **Font Size Toggle**: a [FontSizeToggle](font-size-toggle.md) group of three buttons (smaller, reset, larger)
+  4. **Font Size Toggle**: a [FontSizeToggle](font-size-toggle.md) pair of buttons, a small "A" and a larger one,
      stepping the page content through seven text sizes, 2.5px apart. It sets `--font-scale-setting`, which only reaches
-     `main`, so the header itself never moves. The reset hides below `sm` to keep the toolbar on one row; both steppers
-     stay at every breakpoint.
+     `main`, so the header itself never moves. Both buttons show at every breakpoint; the group is the same `h-8 w-14`
+     footprint as the theme switch beside it.
   5. **Theme Toggle**: a [ThemeToggle](theme-toggle.md) component that lets users switch between dark and light themes.
   6. **Mobile Menu Button** (hidden md and above): a hamburger `Button variant="ghost" size="icon"` that toggles the mobile
      nav panel. See the **Mobile Navigation** section below.
