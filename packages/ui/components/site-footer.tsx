@@ -14,7 +14,8 @@ import {
 import {
   CONTACT_EMAIL,
   COPYRIGHT,
-  FOOTER_COLUMNS,
+  FOOTER_COLUMN_GROUPS,
+  type FooterColumn,
   PRIVACY_LINK,
   SOCIAL_LINKS,
   type SocialLink,
@@ -41,15 +42,50 @@ const SOCIAL_ICONS: Record<SocialLink["icon"], LucideIcon> = {
 const SOCIAL_ICON_LINKS = SOCIAL_LINKS.filter((link) => link.icon !== "mail")
 
 /**
- * The site footer: four columns on large screens, split 20 / 30 / 30 / 20 —
- * the brand lockup, the two navigation columns from `FOOTER_COLUMNS`, and a
- * Contact column (email link + social icon row) — over a bottom bar carrying
- * the ownership copyright and the privacy link. The legal entity name lives
- * in the copyright bar as visible text, so it still contributes to search
- * relevance for "Debmalya Pramanik HUF".
+ * One titled group of footer links: a heading and the `<nav>` list beneath it.
+ * A grid column carries either a single group (PRODUCTS, RESOURCES) or two
+ * stacked one above the other (DISCLAIMER over COMMUNITY). Which is which is
+ * decided in constants by `FOOTER_COLUMN_GROUPS`, never here.
+ */
+function FooterLinkGroup({ column }: { column: FooterColumn }) {
+  return (
+    <div>
+      <h2 className="text-sm font-semibold text-foreground">{column.heading}</h2>
+      <nav aria-label={column.heading} className="mt-4 flex flex-col gap-3">
+        {column.links.map((link) => (
+          <a
+            key={link.label}
+            href={link.href}
+            {...(link.external
+              ? { target: "_blank", rel: "noopener noreferrer" }
+              : {})}
+            className="inline-flex w-fit items-center gap-1 text-sm text-muted-foreground transition-colors hover:text-brand"
+          >
+            {link.label}
+            {link.external ? (
+              <>
+                <ArrowUpRight className="h-3.5 w-3.5" aria-hidden="true" />
+                <span className="sr-only">(opens in a new tab)</span>
+              </>
+            ) : null}
+          </a>
+        ))}
+      </nav>
+    </div>
+  )
+}
+
+/**
+ * The site footer: five equal columns on large screens - the brand lockup, the
+ * three link columns from `FOOTER_COLUMN_GROUPS` (PRODUCTS, RESOURCES, and
+ * DISCLAIMER stacked over COMMUNITY), and a Contact column (email link +
+ * social icon row) - over a bottom bar carrying the ownership copyright and
+ * the privacy link. The legal entity name lives in the copyright bar as
+ * visible text, so it still contributes to search relevance for "Debmalya
+ * Pramanik HUF".
  *
  * A link marked `external` in constants leaves the site: it opens in a new
- * tab and carries a trailing ↗ so the visitor sees that before clicking.
+ * tab and carries a trailing arrow so the visitor sees that before clicking.
  *
  * It is a Server Component. Columns, copy, and the social row come from
  * `@typhed/brand`; colours come only from theme tokens (a faint brand
@@ -64,48 +100,26 @@ export function SiteFooter({ className }: { className?: string }) {
       )}
     >
       <div className="container py-16">
-        <div className="grid grid-cols-1 gap-10 sm:grid-cols-2 lg:grid-cols-10">
-          <div className="flex items-center sm:col-span-2 lg:col-span-2">
+        <div className="grid grid-cols-1 gap-10 sm:grid-cols-2 lg:grid-cols-5">
+          <div className="flex items-center sm:col-span-2 lg:col-span-1">
             {/* The official lockup: mark + wordmark + "Engineering Tomorrow"
-                tagline, in the theme-matched artwork. */}
-            <BrandLockup className="w-48 sm:w-56" />
+                tagline, in the theme-matched artwork. It steps down at `lg`,
+                where a fifth of the container is narrower than the artwork. */}
+            <BrandLockup className="w-48 sm:w-56 lg:w-40 xl:w-48 2xl:w-56" />
           </div>
 
-          {FOOTER_COLUMNS.map((column) => (
-            <div key={column.heading} className="lg:col-span-3">
-              <h2 className="text-sm font-semibold text-foreground">
-                {column.heading}
-              </h2>
-              <nav
-                aria-label={column.heading}
-                className="mt-4 flex flex-col gap-3"
-              >
-                {column.links.map((link) => (
-                  <a
-                    key={link.label}
-                    href={link.href}
-                    {...(link.external
-                      ? { target: "_blank", rel: "noopener noreferrer" }
-                      : {})}
-                    className="inline-flex w-fit items-center gap-1 text-sm text-muted-foreground transition-colors hover:text-brand"
-                  >
-                    {link.label}
-                    {link.external ? (
-                      <>
-                        <ArrowUpRight
-                          className="h-3.5 w-3.5"
-                          aria-hidden="true"
-                        />
-                        <span className="sr-only">(opens in a new tab)</span>
-                      </>
-                    ) : null}
-                  </a>
-                ))}
-              </nav>
+          {FOOTER_COLUMN_GROUPS.map((group) => (
+            <div
+              key={group.map((column) => column.heading).join("-")}
+              className="flex flex-col gap-8"
+            >
+              {group.map((column) => (
+                <FooterLinkGroup key={column.heading} column={column} />
+              ))}
             </div>
           ))}
 
-          <div className="lg:col-span-2">
+          <div>
             <h2 className="text-sm font-semibold text-foreground">Contact Us</h2>
             <a
               href={`mailto:${CONTACT_EMAIL}`}

@@ -6,10 +6,11 @@
 
 <div align = "justify">
 
-`SiteFooter` is the site footer. On large screens it is a four column row split 20 / 30 / 30 / 20: the brand lockup, two
-columns of navigation (PRODUCTS, RESOURCES), and a Contact column with an email link and a social icon row. Beneath them
-sits a bottom bar carrying the copyright, legal entity text, and privacy policy link. The legal entity name ("Debmalya
-Pramanik HUF") stays as visible text so it contributes to search relevance.
+`SiteFooter` is the site footer. On large screens it is a five column row, each column a fifth of the container: the
+brand lockup, two columns of navigation (PRODUCTS, RESOURCES), a legal column stacking DISCLAIMER over COMMUNITY, and a
+Contact column with an email link and a social icon row. Beneath them sits a bottom bar carrying the copyright, legal
+entity text, and privacy policy link. The legal entity name ("Debmalya Pramanik HUF") stays as visible text so it
+contributes to search relevance.
 
 The footer is where the brand layer hands a visitor off to a product. Links that leave `typhed.com` (a product subdomain,
 the blog, the LinkedIn career page) are marked `external` in constants, open in a new tab, and carry a trailing arrow
@@ -22,7 +23,7 @@ card surface) so the footer recolors with both light and dark themes automatical
 ## Source And Import
 
   * **Source**: [packages/ui/components/site-footer.tsx](../../packages/ui/components/site-footer.tsx)
-  * **Data**: `CONTACT_EMAIL`, `COPYRIGHT`, `FOOTER_COLUMNS`, `PRIVACY_LINK`, and `SOCIAL_LINKS` from
+  * **Data**: `CONTACT_EMAIL`, `COPYRIGHT`, `FOOTER_COLUMN_GROUPS`, `PRIVACY_LINK`, and `SOCIAL_LINKS` from
     [@typhed/brand](https://github.com/typhed/shared.documents/blob/master/brand/index.ts)
   * **Depends on**: [BrandLockup](brand-lockup.md)
 
@@ -40,21 +41,25 @@ import { SiteFooter } from "@typhed/ui/components/site-footer"
 
 The root is a `<footer>` with a top border and a faint brand-washed surface. It contains two main blocks:
 
-**Top block** (the multi-column grid, `grid-cols-1 sm:grid-cols-2 lg:grid-cols-10`):
+**Top block** (the multi-column grid, `grid-cols-1 sm:grid-cols-2 lg:grid-cols-5`):
 
-  1. **Brand column** (`sm:col-span-2 lg:col-span-2`, the first 20% track): [BrandLockup](brand-lockup.md) alone (the
-     official mark plus wordmark plus "Engineering Tomorrow" tagline, sized `w-48 sm:w-56` and theme-matched via the
-     `.dark` class). The column is `flex items-center`, so the lockup sits on the vertical centre of the taller nav
-     columns. It carries no link list of its own.
-  2. **Two nav columns** (PRODUCTS, RESOURCES, `lg:col-span-3` each, the 30% tracks): each column has a heading (`<h2>`)
-     and a `<nav>` list of links from `FOOTER_COLUMNS`. Links are quiet at rest (`text-muted-foreground`) and brighten on
-     hover (`hover:text-brand`). An external link gets `target="_blank"`, `rel="noopener noreferrer"`, a trailing
+  1. **Brand column** (`sm:col-span-2 lg:col-span-1`): [BrandLockup](brand-lockup.md) alone (the official mark plus
+     wordmark plus "Engineering Tomorrow" tagline, sized `w-48 sm:w-56 lg:w-40 xl:w-48 2xl:w-56` and theme-matched via
+     the `.dark` class). The artwork steps down at `lg`, where a fifth of the container is narrower than it, and grows
+     back at `xl` and `2xl`. The column is `flex items-center`, so the lockup sits on the vertical centre of the taller
+     nav columns. It carries no link list of its own.
+  2. **Three link columns** (PRODUCTS, RESOURCES, and DISCLAIMER over COMMUNITY): one column per entry in
+     `FOOTER_COLUMN_GROUPS`. Each entry is an array of link groups, so a column renders either one group or two stacked
+     (`flex flex-col gap-8`) - which is how five equal columns carry six blocks of content. Every group is a heading
+     (`<h2>`) over a `<nav>` list of links. Links are quiet at rest (`text-muted-foreground`) and brighten on hover
+     (`hover:text-brand`). An external link gets `target="_blank"`, `rel="noopener noreferrer"`, a trailing
      `ArrowUpRight` glyph (`h-3.5 w-3.5`, `aria-hidden`), and an `sr-only` "(opens in a new tab)" note.
-  3. **Contact column** (`lg:col-span-2`, the second 20% track): a heading ("Contact Us"), a `mailto:` link to
-     `CONTACT_EMAIL` (styled as nav links), and below it a "Social Connect" subheading with a social icon row.
+  3. **Contact column**: a heading ("Contact Us"), a `mailto:` link to `CONTACT_EMAIL` (styled as nav links), and below
+     it a "Social Connect" subheading with a social icon row.
 
-The `lg:grid-cols-10` track count is what encodes the 20 / 30 / 30 / 20 split: two, three, three, and two of ten equal
-tracks. Below `lg` the grid falls back to two columns and then to one, so the split is a large-screen rule only.
+The `lg:grid-cols-5` track count is what gives every column its fifth of the container, and no column carries a span of
+its own - the brand column only resets the `sm:col-span-2` it needs on the two column layout. Below `lg` the grid falls
+back to two columns and then to one, so the five column row is a large-screen rule only.
 
 **Social icon row**:
 
@@ -117,18 +122,35 @@ automatically through tokens. No hardcoded hex is used.
         { "label": "TyPhed Trading", "href": "https://trading.typhed.com/", "external": true },
         { "label": "Products Pricing", "href": "#" }
       ]
+    },
+    "disclaimer": {
+      "heading": "DISCLAIMER",
+      "links": [{ "label": "Legal Disclaimer", "href": "#" }]
+    },
+    "community": {
+      "heading": "COMMUNITY",
+      "links": [
+        { "label": "Code of Conduct", "href": "/permalink/conduct.html" },
+        { "label": "Contributing Guidelines", "href": "#" }
+      ]
     }
   },
-  "contactEmail": "pramanik.huf@gmail.com"
+  "contactEmail": "pramanik.huf@gmail.com",
+  "privacy": { "label": "Privacy Policy", "href": "#" }
 }
 ```
+
+The DISCLAIMER column renders Privacy Policy first even though `disclaimer.links` does not list it: `brand/index.ts`
+prepends `PRIVACY_LINK` to that column, so the column entry and the bottom bar link can never point at different pages.
+Repoint `privacy` and both move together.
 
 The change reaches every TyPhed property on its next build. Nothing in this repository, and nothing in any
 consuming app, needs editing to add or repoint a footer link.
 
 ## Accessibility
 
-  * Each nav column has an `aria-label` matching its heading, so screen readers announce the section purpose.
+  * Each link group has a `<nav>` with an `aria-label` matching its heading, so screen readers announce the section
+    purpose. A column holding two groups (DISCLAIMER over COMMUNITY) exposes two separately labelled landmarks.
   * The social icon row has `aria-label="Social media"` to label the group.
   * Each social icon button carries `aria-label` and `title` matching its network name, so screen readers announce the
     link.
@@ -142,10 +164,12 @@ consuming app, needs editing to add or repoint a footer link.
 
 ## Usage Guidelines
 
-The two middle columns come from `FOOTER_COLUMNS` (PRODUCTS and RESOURCES), the contact email from `CONTACT_EMAIL`, and
-the social icons from `SOCIAL_LINKS` in constants. Add product or resource links by editing the arrays behind
-`FOOTER_COLUMNS`, and set `external: true` on anything that leaves `typhed.com` so it opens in a new tab and shows the
-arrow. Do not edit the footer component to add a link. To add a social network, append an entry to `SOCIAL_LINKS` with a
+The three middle columns come from `FOOTER_COLUMN_GROUPS` (PRODUCTS, RESOURCES, and DISCLAIMER over COMMUNITY), the
+contact email from `CONTACT_EMAIL`, and the social icons from `SOCIAL_LINKS` in constants. Add links by editing the
+arrays behind `FOOTER_COLUMN_GROUPS`, and set `external: true` on anything that leaves `typhed.com` so it opens in a new
+tab and shows the arrow. Do not edit the footer component to add a link. Adding a *column* is a layout change and does
+need one: five columns is what the container width carries, so a sixth block of content stacks inside an existing column
+rather than claiming a track of its own. To add a social network, append an entry to `SOCIAL_LINKS` with a
 supported icon name; the footer renders it automatically. The `mail` entry in `SOCIAL_LINKS` is always excluded from the
 icon row (shown as a text link instead). The brand column holds the lockup and nothing else: it is the visual anchor of
 the row, not a link list. Keep the legal entity line as visible text in the copyright bar. The copyright year updates
@@ -155,7 +179,7 @@ automatically through JavaScript (`new Date().getFullYear()`), so no annual main
 
 | Do | Don't |
 | --- | --- |
-| Add product or resource links via `FOOTER_COLUMNS` in constants. | Hardcode nav column links into the footer. |
+| Add links via the arrays behind `FOOTER_COLUMN_GROUPS` in constants. | Hardcode column links into the footer. |
 | Mark off-site destinations with `external: true`. | Send a footer link off-site without it, losing the new tab and the arrow. |
 | Keep the brand column to the lockup alone. | Reintroduce a link stack under the lockup. |
 | Add social networks via `SOCIAL_LINKS` in constants. | Hardcode social links or icon buttons. |
@@ -163,7 +187,9 @@ automatically through JavaScript (`new Date().getFullYear()`), so no annual main
 | Keep the legal entity as visible text in the copyright bar. | Replace it with a logo or hide it. |
 | Use one of the supported icon names (github, linkedin, twitter, instagram, youtube, facebook). | Invent new icon names. |
 | Keep `rel="noopener noreferrer"` on external links. | Open external links without the safe `rel`. |
-| Hold the 20 / 30 / 30 / 20 split by editing `col-span` on the ten track grid. | Swap in arbitrary percentage widths. |
+| Hold the five equal columns by editing `lg:grid-cols-5`. | Swap in arbitrary percentage widths or per column spans. |
+| Let a column stack two groups when content outgrows five tracks. | Add a sixth grid column and squeeze every one of them. |
+| Repoint the privacy policy once, in `privacy`. | List Privacy Policy again under `disclaimer` and let the two drift. |
 | Use the subtle brand gradient over `bg-card`. | Add a dark, opaque background. |
 
 </div>
