@@ -113,6 +113,8 @@ automatically through tokens. No hardcoded hex is used.
 ```json
 // Edit the footer columns in the brand contract, not the component.
 // "external": true is what opens a new tab and adds the trailing arrow.
+// An href starting with "/" is a page the brand layer hosts; @typhed/brand
+// expands it to a full https://typhed.com/... URL before this component runs.
 // shared.documents/brand/navigation.json
 {
   "footer": {
@@ -143,6 +145,12 @@ automatically through tokens. No hardcoded hex is used.
 The DISCLAIMER column renders Privacy Policy first even though `disclaimer.links` does not list it: `brand/index.ts`
 prepends `PRIVACY_LINK` to that column, so the column entry and the bottom bar link can never point at different pages.
 Repoint `privacy` and both move together.
+
+Every `href` in that JSON is written from the brand site's point of view, so `/permalink/conduct.html` is the path that
+page has on `typhed.com`. What the footer receives is the full URL, because `brand/index.ts` expands each one against
+the canonical site URL first. That is what keeps the column working when this same footer renders on
+`blog.typhed.com` or `trading.typhed.com`, where a root-relative path would resolve against the wrong host. A full URL,
+a `mailto:`, and the `#` placeholder pass through untouched.
 
 The change reaches every TyPhed property on its next build. Nothing in this repository, and nothing in any
 consuming app, needs editing to add or repoint a footer link.

@@ -54,10 +54,13 @@ before any readable text renders; without it, a visitor on the larger setting wa
 size and then reflow. The tag is `display: none` and never affects layout.
 
   1. **Logo link**: an `<a href="/">` wrapping `<BrandMark />` with `aria-label`. It carries a focus ring for keyboard
-     navigation.
+     navigation. The `/` is relative on purpose. It means the home page of whichever property is rendering, which every
+     property has, so it is the one header link the brand contract deliberately leaves alone.
   2. **Desktop nav** (hidden on mobile, shown md and above): a `<nav aria-label="Primary">` row of anchor links, one per
      entry in `NAV_LINKS`. External links get `target="_blank"` and `rel="noopener noreferrer"`. Links are quiet at rest
-     (`text-muted-foreground`), brighten on hover (`hover:text-foreground`).
+     (`text-muted-foreground`), brighten on hover (`hover:text-foreground`). An entry naming a page the brand layer
+     hosts arrives from `@typhed/brand` as a full URL, so the nav still reaches `typhed.com` when this header renders on
+     a product subdomain.
   3. **Login / Sign Up** (hidden on mobile, shown md and above): a `Button variant="default" size="sm"` as an anchor. The
      label and href come from `LOGIN_CTA` in [@typhed/brand](https://github.com/typhed/shared.documents/blob/master/brand/index.ts), so both desktop and
      mobile use the same CTA text and destination. Currently links to `#` (placeholder until the auth flow exists).
@@ -126,11 +129,13 @@ export default function RootLayout({ children }) {
 
 ```json
 // Add a nav link by editing the brand contract, not the component.
+// An href starting with "/" is a page the brand layer hosts; @typhed/brand
+// expands it to a full https://typhed.com/... URL before this component runs.
 // shared.documents/brand/navigation.json
 {
   "nav": [
     { "label": "Our Products", "href": "#" },
-    { "label": "About Us", "href": "/about" }
+    { "label": "About Us", "href": "/about/" }
   ]
 }
 ```
