@@ -79,10 +79,9 @@ function FooterLinkGroup({ column }: { column: FooterColumn }) {
  * The site footer: five equal columns on large screens - the brand lockup, the
  * three link columns from `FOOTER_COLUMN_GROUPS` (PRODUCTS, RESOURCES, and
  * DISCLAIMER stacked over COMMUNITY), and a Contact column (email link +
- * social icon row) - over a bottom bar carrying the ownership copyright and
- * the privacy link. The legal entity name lives in the copyright bar as
- * visible text, so it still contributes to search relevance for "Debmalya
- * Pramanik HUF".
+ * social icon row) - over a bottom bar carrying the copyright line and the
+ * privacy link. TyPhed is an autonomous brand, so the bar names no owning
+ * entity: `COPYRIGHT.line1` is the whole of it.
  *
  * A link marked `external` in constants leaves the site: it opens in a new
  * tab and carries a trailing arrow so the visitor sees that before clicking.
@@ -163,10 +162,7 @@ export function SiteFooter({ className }: { className?: string }) {
 
       <div className="border-t border-border">
         <div className="container flex flex-col gap-4 py-6 text-xs text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
-          <div className="space-y-1">
-            <p>{COPYRIGHT.line1}</p>
-            <p>{COPYRIGHT.line2}</p>
-          </div>
+          <p>{COPYRIGHT.line1}</p>
           <a
             href={PRIVACY_LINK.href}
             className="transition-colors hover:text-brand"

@@ -8,9 +8,9 @@
 
 `SiteFooter` is the site footer. On large screens it is a five column row, each column a fifth of the container: the
 brand lockup, two columns of navigation (PRODUCTS, RESOURCES), a legal column stacking DISCLAIMER over COMMUNITY, and a
-Contact column with an email link and a social icon row. Beneath them sits a bottom bar carrying the copyright, legal
-entity text, and privacy policy link. The legal entity name ("Debmalya Pramanik HUF") stays as visible text so it
-contributes to search relevance.
+Contact column with an email link and a social icon row. Beneath them sits a bottom bar carrying the copyright line and
+the privacy policy link. TyPhed is an autonomous brand, so the bar names no owning entity: the copyright line is the
+whole of it.
 
 The footer is where the brand layer hands a visitor off to a product. Links that leave `typhed.com` (a product subdomain,
 the blog, the LinkedIn career page) are marked `external` in constants, open in a new tab, and carry a trailing arrow
@@ -74,8 +74,8 @@ back to two columns and then to one, so the five column row is a large-screen ru
 
 **Bottom bar**:
 
-  * Left: `COPYRIGHT.line1` (the year-stamped copyright, muted) stacked above `COPYRIGHT.line2` (the legal entity,
-    muted).
+  * Left: `COPYRIGHT.line1`, the year-stamped copyright, muted. It is the only line in the bar - there is no second
+    ownership line beneath it.
   * Right: the privacy policy link (`PRIVACY_LINK`), same muted-to-brand hover as the nav links.
   * Responsive: column on small screens, row on medium and above.
 
@@ -137,7 +137,7 @@ automatically through tokens. No hardcoded hex is used.
       ]
     }
   },
-  "contactEmail": "pramanik.huf@gmail.com",
+  "contactEmail": "karta@typhed.com",
   "privacy": { "label": "Privacy Policy", "href": "#" }
 }
 ```
@@ -167,7 +167,7 @@ consuming app, needs editing to add or repoint a footer link.
   * The brand lockup inside the footer is not wrapped in a link; it is a visual marker of context (already at the
     bottom). Its two images are decorative, with a single `sr-only` label; see [BrandLockup](brand-lockup.md).
   * All links are real text, readable by screen readers and searchable by engines.
-  * The legal entity name is visible text in the copyright bar, not an image.
+  * The copyright line is visible text in the bottom bar, not an image.
   * External links use `rel="noopener noreferrer"`, a security and privacy safeguard.
 
 ## Usage Guidelines
@@ -180,7 +180,7 @@ need one: five columns is what the container width carries, so a sixth block of 
 rather than claiming a track of its own. To add a social network, append an entry to `SOCIAL_LINKS` with a
 supported icon name; the footer renders it automatically. The `mail` entry in `SOCIAL_LINKS` is always excluded from the
 icon row (shown as a text link instead). The brand column holds the lockup and nothing else: it is the visual anchor of
-the row, not a link list. Keep the legal entity line as visible text in the copyright bar. The copyright year updates
+the row, not a link list. Keep the copyright line as visible text in the bottom bar. The copyright year updates
 automatically through JavaScript (`new Date().getFullYear()`), so no annual maintenance is needed.
 
 ## Do's And Don'ts
@@ -192,7 +192,7 @@ automatically through JavaScript (`new Date().getFullYear()`), so no annual main
 | Keep the brand column to the lockup alone. | Reintroduce a link stack under the lockup. |
 | Add social networks via `SOCIAL_LINKS` in constants. | Hardcode social links or icon buttons. |
 | Drive the email from `CONTACT_EMAIL`. | Paste an email address into the component. |
-| Keep the legal entity as visible text in the copyright bar. | Replace it with a logo or hide it. |
+| Keep the copyright line as visible text in the bottom bar. | Replace it with a logo or hide it. |
 | Use one of the supported icon names (github, linkedin, twitter, instagram, youtube, facebook). | Invent new icon names. |
 | Keep `rel="noopener noreferrer"` on external links. | Open external links without the safe `rel`. |
 | Hold the five equal columns by editing `lg:grid-cols-5`. | Swap in arbitrary percentage widths or per column spans. |
